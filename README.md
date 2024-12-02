@@ -23,3 +23,8 @@ I'll explore GitHub Copilot for helping me to build, fix and optimize the code.
 * Calendar: https://adventofcode.com/2024
 * Events: https://adventofcode.com/2024/events
 * Statistics: https://adventofcode.com/2024/stats
+
+## My progress
+
+* [Day 1](./day-01/Program.cs) ⭐⭐
+* [Day 2](./day-02/Program.cs)
