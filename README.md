@@ -23,4 +23,3 @@ I'll explore GitHub Copilot for helping me to build, fix and optimize the code.
 * Calendar: https://adventofcode.com/2024
 * Events: https://adventofcode.com/2024/events
 * Statistics: https://adventofcode.com/2024/stats
-
