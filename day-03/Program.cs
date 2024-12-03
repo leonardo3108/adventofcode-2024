@@ -78,10 +78,6 @@ The other mul instructions are enabled, including the final mul(8,5) which is re
 The sum of the results from the enabled multiplications in this example is 48, calculated as 2*4 + 8*5.
 The task is to handle these new instructions and determine the sum of the results of the enabled multiplications in your own corrupted memory input.
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 900805074ec79e9dd2cb7ad01d9a058efedf5db0
 To solve this problem, you can follow these steps:
 1. Split the corrupted memory string into individual instructions.
 2. For each mul instruction, check if it is enabled based on the last conditional flag (do() or don't()).
@@ -89,21 +85,7 @@ To solve this problem, you can follow these steps:
 4. Print the total sum of the multiplications.
 */
 
-<<<<<<< HEAD
-=======
-=======
-To solve this problem, you can follow these steps with the previous solution as a base:
-1. Add a flag to track whether mul instructions are enabled or disabled.
-2. When encountering a do() instruction, set the flag to true to enable mul instructions.
-3. When encountering a don't() instruction, set the flag to false to disable mul instructions.
-4. Only perform the multiplication and add the result to the total sum if the mul instructions are enabled.
-5. Return the total sum of the enabled multiplications.
-*/
-
 using System;
-using System.Runtime.InteropServices;
->>>>>>> b9c5b2cf3bd865948b52c7d0e7b0df2c441978ad
->>>>>>> 900805074ec79e9dd2cb7ad01d9a058efedf5db0
 using System.Text.RegularExpressions;
 
 class Program
