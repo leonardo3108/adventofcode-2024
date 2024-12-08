@@ -213,13 +213,12 @@ The puzzle involves finding possible positions for a new obstruction that will c
 The goal is to determine the number of different positions where the obstruction can be placed to create a loop for the guard.
 
 Resolution Steps:
-1. Identify the guard's patrol path and the positions visited. (mode of simulation 0)
-2. Try placing a new obstruction at each visited position to check if it creates a loop. (mode of simulation 1)
-3. Simulate the guard's movement after placing the obstruction to detect loops. (mode of simulation 2)
-4. If the guard gets stuck in a loop (repeat the position and direction), return the set of distinct positions visited.
-5. If the guard does not get stuck in a loop (exit the map), return an empty set.
-6. Count the number of positions where placing an obstruction causes the guard to get stuck in a loop.
-7. Output the count of such positions.
+1. Use the simulation of the guard's path to identify the distinct positions visited by the guard.
+2. Create a set of potential obstructions based on the distinct positions visited by the guard, excluding the starting position.
+3. Simulate the guard's path with each potential obstruction to check if it gets stuck in a loop.
+4. Remove the obstructions that cause the guard to get stuck in a loop.
+5. Count the remaining obstructions as the number of different positions that could cause the guard to get stuck in a loop.
+6. Provide the final count of different positions for the obstruction.
 */
 
 using System;
@@ -313,6 +312,7 @@ class Program
     /// <param name="x0">The initial row index of the guard.</param>
     /// <param name="y0">The initial column index of the guard.</param>
     /// <param name="d0">The initial direction the guard is facing.</param>
+    /// <returns>A tuple containing a boolean indicating if the guard is stuck in a loop and a list of guard positions visited.</returns>
     private static (bool, List<(int, int, char)>) SimulateGuardPath(string[] map, int x0, int y0, char d0)
     {
         (int x, int y, char direction) = (x0, y0, d0);
@@ -407,7 +407,7 @@ class Program
         // Output the number of distinct positions visited by the guard
         Console.WriteLine($"Distinct positions visited: {positionsVisited.Count}");
 
-        // The distinct positions visited by the guard are the potential locations for new obstructions
+        // The distinct positions visited by the guard are the potential locations for obstructions
         HashSet<(int, int)> efectiveObstructions = positionsVisited;
 
         // Remove the starting position. It is not allowed to place an obstruction at the guard's starting position.
