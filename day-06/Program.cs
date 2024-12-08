@@ -1,20 +1,5 @@
 ﻿/*  Problem Description:
-if (mode == 1)   
-{
-    // Create a copy of the map to simulate the path with the new obstruction
-    string[] mapCopy = (string[])map.Clone();
-    
-    // Add new obstruction to the map copy, in the new position, to check if the guard gets stuck in a loop
-    mapCopy[newX] = mapCopy[newX].Substring(0, newY) + 'O' + mapCopy[newX].Substring(newY + 1);
 
-    // Simulate the path of the guard with the new obstruction, to check if it gets stuck in a loop
-    HashSet<(int, int, char)> checkLoop = SimulateGuardPath(mapCopy, x, y, direction, 2);
-    if (checkLoop.Count > 0)
-    {
-        // Add the new obstruction to the set of obstructions that cause the guard to get stuck in a loop
-        MarkLocation(newX, newY, 'O', mode, trackedLocations);
-    }
-}
 --- Day 6: Guard Gallivant ---
 The Historians use their fancy device again, this time to whisk you all away to the North Pole prototype suit manufacturing lab... in the year 1518! It turns out that having direct access to history is very convenient for a group of historians.
 
