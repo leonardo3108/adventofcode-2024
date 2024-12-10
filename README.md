@@ -34,3 +34,4 @@ I'll explore GitHub Copilot for helping me to build, fix and optimize the code.
 * [Day 6](./day-06/Program.cs) ⭐⭐
 * [Day 7](./day-07/Program.cs)
 * [Day 8](./day-08/Program.cs) ⭐⭐
+* [Day 9](./day-09/Program.cs) ⭐⭐
