@@ -87,10 +87,8 @@ Resolution steps:
 2. Read the input file and store the stones in a list.
 3. Iterate over the stones. For each stone, verify if we have already processed it for the current number of blinks.
 4. If we have, we can use the result stored in the dictionary. 
-5. If not, we check if we have processed it for a smaller number of blinks.
-6. If we have, we can use the result stored in the dictionary, apply one more blink, store the result in the dictionary, and check again.
-7. If not, we process the stone for one blink, store the result in the dictionary, and check again.
-8. Print the number of stones after 75 blinks.
+5. If not, we process the stone, and store the result in the dictionary.
+6. Print the number of stones after 75 blinks.
 */
 
 using System;
