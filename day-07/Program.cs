@@ -37,10 +37,38 @@ The operators are always evaluated left-to-right, and the numbers in the equatio
 
 Resolution Steps:
 1. Parse the input data into a list of equations.
-2. Generate all possible combinations of operators for each equation.
-3. Evaluate each equation with the generated combinations of operators.
-4. Calculate the sum of the test values for the equations that can be solved with at least one combination of operators.
+2. For each equation, and each number in the equation, try every possible operator to get the partial results.
+3. Remove results above the test value, and continue to the next number in the equation.
+3. At the end of the equation, check if there is a result that matches the test value. If so, the equation is valid.
+4. Calculate the sum of the test values for the valid equations.
 5. Print the total calibration result.
+
+
+--- Part Two ---
+The engineers seem concerned; the total calibration result you gave them is nowhere close to being within safety tolerances. Just then, you spot your mistake: some well-hidden elephants are holding a third type of operator.
+
+The concatenation operator (||) combines the digits from its left and right inputs into a single number. For example, 12 || 345 would become 12345. All operators are still evaluated left-to-right.
+
+Now, apart from the three equations that could be made true using only addition and multiplication, the above example has three more equations that can be made true by inserting operators:
+
+156: 15 6 can be made true through a single concatenation: 15 || 6 = 156.
+7290: 6 8 6 15 can be made true using 6 * 8 || 6 * 15.
+192: 17 8 14 can be made true using 17 || 8 + 14.
+Adding up all six test values (the three that could be made before using only + and * plus the new three that can now be made by also using ||) produces the new total calibration result of 11387.
+
+Using your new knowledge of elephant hiding spots, determine which equations could possibly be true. What is their total calibration result?
+
+Resume and resolution:
+
+The problem is an extension of the previous one, with the addition of a new operator, the concatenation operator (||).
+The concatenation operator combines the digits from its left and right inputs into a single number. All operators are still evaluated left-to-right.
+
+Resolution:
+In addition to the previous steps, we need to add the concatenation operator to the possible operations.
+When adding the concatenation operator, we need to consider the number of digits in the left and right inputs to calculate the new number.
+We had refactored the code to extract the calculation of the calibration result for an equation into a separate method.
+We added a flag to indicate if the concatenation operator should be used.
+Then, we could calculate the calibration result for the two parts of the problem by calling the method with the appropriate flag.
 */
 
 using System;
@@ -51,195 +79,6 @@ using System.Reflection.PortableExecutable;
 
 class Program
 {
-
-    // Class to represent an equation    
-    class Equation
-    {
-        // Test value of the equation
-        public long TestValue { get; }
-        // Numbers in the equation
-        public int[] Numbers { get; }
-
-        // List of available operators to apply to the numbers
-        public List<char> AvailableOperators { get; }        
-
-        // Combination of operators that can be applied to the numbers
-        public char[]? CombinationOfOperators { get; set; }
-
-        // Result of the equation, if the combination of operators is set
-        public int Result { get; set; }
-
-        // Constructor to initialize the equation
-        public Equation(long testValue, int[] numbers, List<char> availableOperators)
-        {
-            TestValue = testValue;
-            Numbers = numbers;
-            AvailableOperators = availableOperators;
-        }
-
-        // Override ToString method to print the equation
-        public override string ToString()
-        {
-            if (CombinationOfOperators == null)
-                return "" + this.TestValue + " = " + string.Join(" ? ", Numbers) + " (no viable combination found)";
-            else
-            {
-                string equationString = this.TestValue + " = " + this.Numbers[0] + " ";
-                for (int i = 0; i < this.CombinationOfOperators.Length; i++)
-                {
-                    equationString += this.CombinationOfOperators[i] + " " + this.Numbers[i + 1] + " ";
-                }
-                return equationString + " = " + this.Result + " (one viable combination)    !!!!!";
-            }
-        }
-
-        public void Evaluate()
-        {
-            // Check if the combination of operators is set. If not, return -1.
-            if (CombinationOfOperators == null)
-                return;
-            // Position of the current number in the equation
-            int position = 0;
-            // Initialize the result with the first number
-            int result = this.Numbers[position];
-            // Iterate through each operator in the combination
-            foreach (char op in this.CombinationOfOperators)
-            {
-                // Move to the next number position
-                position++;
-                // Apply the operator to the result and the next number. 
-                // If the operator is addition, add the number to the result. 
-                if (op == '+') // Add
-                {
-                    result += this.Numbers[position];
-                }
-                // If the operator is multiplication, multiply the number with the result.
-                else if (op == '*') // Multiply
-                {
-                    result *= Numbers[position];
-                }
-            }
-            // Set the result of the equation, if it matches the test value
-            if (result == this.TestValue)
-            {
-                Result = result;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Parse the input data into a list of equations
-    /// </summary>
-    /// <param name="lines">Array of strings representing the input data</param>
-    /// <param name="availableOperators">List of available operators</param>
-    /// <returns>List of equations</returns>
-    /// <remarks>
-    /// Each line represents a single equation. The test value appears before the colon on each line, and the remaining numbers are separated by spaces.
-    /// </remarks>
-    static List<Equation> ParseEquations(string[] lines, List<char> availableOperators)
-    {
-        List<Equation> equations = new List<Equation>();
-        foreach (string line in lines)
-        {
-            string[] parts = line.Split(':');
-            long testValue = long.Parse(parts[0]);
-            int[] numbers = parts[1].Trim().Split(' ').Select(int.Parse).ToArray();
-            equations.Add(new Equation(testValue, numbers, availableOperators));
-        }
-        return equations;
-    }
-
-    /// <summary>
-    /// Generate all possible combinations of operators for a given length
-    /// </summary>
-    /// <param name="operatorCount">Number of operators to generate</param>
-    /// <param name="availableOperators">List of available operators</param>
-    /// <returns>List of all possible combinations of operators for the given number of operators</returns>
-    static List<char[]> GenerateCombinations(int operatorCount, List<char> availableOperators)
-    {
-        // List to store all possible combinations of operators
-        List<char[]> operatorCombinations = new List<char[]>();
-        // Count the number of available operators
-        int availableOperatorsCount = availableOperators.Count;
-        // Calculate the total number of combinations
-        int totalCombinations = (int)Math.Pow(availableOperatorsCount, operatorCount);
-        // Iterate through each combination code, wich represents a unique combination of operators
-        for (int combinationCode = 0; combinationCode < totalCombinations; combinationCode++)
-        {
-            // Convert the combination code to an array of operators
-            char[] combination = new char[operatorCount];
-            int remainingCombinationCode = combinationCode;
-            // Generate the combination of operators for the current combination code
-            for (int i = operatorCount - 1; i >= 0; i--)
-            {
-                // Get the index of the operator based on the last unit of the combination code
-                int lastOperatorIndex = remainingCombinationCode % availableOperatorsCount;
-                // Get the operator from the available operators list using the index
-                combination[i] = availableOperators[lastOperatorIndex];
-                // Update the remaining combination code by dividing it by the number of available operators, to get the next unit
-                remainingCombinationCode /= availableOperatorsCount;
-            }
-            // Add the current combination of operators to the list
-            operatorCombinations.Add(combination);
-            //Console.WriteLine("\tCombination generated: " + string.Join(" ", combination));
-        }
-        // Return the list of all possible combinations of operators
-        return operatorCombinations;
-    }
-
-    /// <summary>
-    /// Calculate the sum of the test values for the equations that can be solved with at least one combination of operators
-    /// </summary>
-    /// <param name="equations">List of equations</param>
-    /// <param name="operators">List of operators</param>
-    /// <returns>Sum of the test values for the equations that can be solved with at least one combination of operators</returns>
-    /// <remarks>
-    /// The operators are always evaluated left-to-right, not according to precedence rules.
-    /// </remarks>
-    /// <remarks>
-    /// The operators are add (+) and multiply (*).
-    /// </remarks>
-    static long CalculateTotalResultFromEquations(List<Equation> equations, List<char> operators)
-    {
-        // Variable to store the total calibration result
-        long totalCalibrationResult = 0;
-        // Iterate through each equation
-        foreach (Equation equation in equations)
-        {
-            //Console.WriteLine(equation);
-
-            // Generate all possible combinations of operators (addition and multiplication)
-            List<char[]> operatorCombinations = GenerateCombinations(equation.Numbers.Length - 1, operators);
-            // Iterate through each combination of operators
-            foreach (char[] combination in operatorCombinations)
-            {
-                // Set the current combination of operators for the equation
-                equation.CombinationOfOperators = combination;
-
-                // Evaluate the equation with the current combination of operators
-                equation.Evaluate();
-
-                // Check if the result matches the test value
-                if (equation.Result == equation.TestValue)
-                {
-                    // If the result matches, add the test value to the total calibration result
-                    totalCalibrationResult += equation.TestValue;
-
-                    // No need to check other combinations for this equation
-                    break;
-                }
-                else
-                {
-                    // Reset the combination of operators for the equation
-                    equation.CombinationOfOperators = null;
-                }
-            }
-            // Print the equation with the result (if found)
-            Console.WriteLine("\t" + equation + " (calibration result: " + totalCalibrationResult + ")");
-        }
-        return totalCalibrationResult;
-    }
-
     static void Main()
     {
         // Sample input data
@@ -259,16 +98,67 @@ class Program
         // Read the input file
         lines = File.ReadAllLines("input.txt");
 
-        // List of operators
-        List<char> operators = new List<char> { '+', '*' };
+        // Initialize the calibration result, which is the sum of the test values for the valid equations, to 0. 
+        // There are two calibration results, one for part one and one for part two.
+        long calibrationResultOne = 0;
+        long calibrationResultTwo = 0;
 
-        // Parse the data into a list of equations
-        List<Equation> equations = ParseEquations(lines, operators);
+        // Parse each line of the input data to get the test value and the numbers
+        foreach (var line in lines)
+        {
+            // Split the line into the test value and the numbers
+            string[] parts = line.Split(": ");
+            // First part is the test value
+            long testValue = long.Parse(parts[0]);
+            // Second part is the list of numbers. Split the numbers and convert them to an array of integers
+            int[] numbers = parts[1].Split(" ").Select(int.Parse).ToArray();
 
-        // Calculate the total calibration result
-        long totalCalibrationResult = CalculateTotalResultFromEquations(equations, operators);
+            // Calculate the calibration result for the equation and add it to the total calibration result
+            calibrationResultOne += CalibrationResultForEquation(testValue, numbers, false);
+            calibrationResultTwo += CalibrationResultForEquation(testValue, numbers, true);
+        }
 
-        // Print the total calibration result
-        Console.WriteLine("Total Calibration Result: " + totalCalibrationResult);
+        // Print the total calibration results
+        Console.WriteLine($"Total calibration result - Part One: {calibrationResultOne}");
+        Console.WriteLine($"Total calibration result - Part Two: {calibrationResultTwo}");
+    }
+
+    /// <summary>
+    /// Calculate the calibration result for an equation with a test value and a list of numbers.
+    /// </summary>
+    /// <param name="testValue">The test value to check if the equation is valid.</param>
+    /// <param name="numbers">The list of numbers in the equation.</param>
+    /// <param name="useConcatenation">Flag to indicate if the concatenation operator should be used.</param>
+    /// <returns>The test value if the equation is valid, 0 otherwise.</returns>
+    private static long CalibrationResultForEquation(long testValue, int[] numbers, bool useConcatenation = false)
+    {
+        // Calculate all possible results for the equation, iterating over the numbers and finding all possible partial results.
+        HashSet<long> results = new HashSet<long>();
+        // Initialize the results with the first number. No operation so far.
+        results.Add(numbers[0]);
+
+        foreach (var number in numbers.Skip(1))
+        {
+            // Create a new set to store the partial results for the current number
+            HashSet<long> newResults = new HashSet<long>();
+            foreach (var result in results)
+            {
+                // Try to add the number to the result. If overflows, skip.
+                if (result + number <= testValue)
+                    newResults.Add(result + number);
+                // Try to multiply the number with the result. If overflows, skip.
+                if (result * number <= testValue)
+                    newResults.Add(result * number);
+                // Try to concatenate the number with the result. If overflows, skip.
+                if (useConcatenation 
+                        && long.TryParse(result.ToString() + number.ToString(), out long concatenatedResult) 
+                        && concatenatedResult <= testValue)
+                    newResults.Add(concatenatedResult);
+            }
+            // Update the results with the new partial results
+            results = newResults;
+        }
+        // If the equation is valid, i.e., if there is one result that matches the test value, return the test value. Otherwise, return 0.
+        return (results.Contains(testValue)) ? testValue : 0;
     }
 }
