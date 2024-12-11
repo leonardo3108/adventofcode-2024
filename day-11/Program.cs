@@ -148,7 +148,7 @@ class Program
         long result = 0;
         // Check if we have already processed the current stone for the given number of blinks.
         if (processed.TryGetValue((stone, blinks), out result))
-            // If we have, just return the result.
+            // If we have, just return the stored result.
             return result;
         // If we haven't, we need to process the stone, store the result in the dictionary, and return it.
         // For zero blinks, we have only the original stone.
