@@ -39,3 +39,6 @@ I'll explore GitHub Copilot for helping me to build, fix and optimize the code.
 * [Day 11](./day-11/Program.cs) ⭐⭐
 * [Day 12](./day-12/Program.cs) ⭐⭐
 * [Day 13](./day-13/Program.cs) ⭐⭐
+* [Day 14](./day-14/Program.cs) ⭐⭐    Representation of the grid:
+  * <p align="left"><a href="./day-14/07093.txt">Textual</a>. Image:<img align="center" src="./day-14/07093.jpg" /></p>
+* Day 15
