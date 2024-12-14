@@ -43,5 +43,5 @@ I'll explore GitHub Copilot for helping me to build, fix and optimize the code.
 
 ## Solutions / Representation:
 * [Day 14](./day-14/Program.cs) - Grid:
-  * [Textual](./day-14/07093.txt").
+  * [Textual](./day-14/07093.txt).
   * <p>Image: <img align="center" src="./day-14/07093.jpg" /></p>
