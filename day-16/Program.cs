@@ -93,18 +93,65 @@ Find the path with the lowest score.
 
 Resolution steps:
 1. Read the input grid.
-2. Create a function to find the path from the start to the end.
-3. Create a function to find the path with the lowest score.
-4. Find the path with the lowest score.
-5. Print the lowest score.
+2. Create a list of positions to visit, with the score, and the direction of the movement.
+3. Create a dictionary of visited positions, with the score, and the direction of the movement.
+4. Start from the start position, with a score of 0, and direction to the left.
+5. Loop while there are positions to visit.
+6. Get the first position to visit, with the lowest score.
+7. Find the neighbors of the current position, starting from the same direction, and turning clockwise and counterclockwise.
+8. If it finds the end position, print the score and break.
+
+--- Part Two ---
+Now that you know what the best paths look like, you can figure out the best spot to sit.
+
+Every non-wall tile (S, ., or E) is equipped with places to sit along the edges of the tile. 
+While determining which of these tiles would be the best spot to sit depends on a whole bunch of factors 
+(how comfortable the seats are, how far away the bathrooms are, whether there's a pillar blocking your view, etc.), 
+the most important factor is whether the tile is on one of the best paths through the maze. 
+If you sit somewhere else, you'd miss all the action!
+
+So, you'll need to determine which tiles are part of any best path through the maze, including the S and E tiles.
+
+In the first example, there are 45 tiles (marked O) that are part of at least one of the various best paths through the maze:
+
+###############
+#.......#....O#
+#.#.###.#.###O#
+#.....#.#...#O#
+#.###.#####.#O#
+#.#.#.......#O#
+#.#.#####.###O#
+#..OOOOOOOOO#O#
+###O#O#####O#O#
+#OOO#O....#O#O#
+#O#O#O###.#O#O#
+#OOOOO#...#O#O#
+#O###.#.#.#O#O#
+#O..#.....#OOO#
+###############
+In the second example, there are 64 tiles that are part of at least one of the best paths:
+
+#################
+#...#...#...#..O#
+#.#.#.#.#.#.#.#O#
+#.#.#.#...#...#O#
+#.#.#.#.###.#.#O#
+#OOO#.#.#.....#O#
+#O#O#.#.#.#####O#
+#O#O..#.#.#OOOOO#
+#O#O#####.#O###O#
+#O#O#..OOOOO#OOO#
+#O#O###O#####O###
+#O#O#OOO#..OOO#.#
+#O#O#O#####O###.#
+#O#O#OOOOOOO..#.#
+#O#O#O#########.#
+#O#OOO..........#
+#################
+Analyze your map further. How many tiles are part of at least one of the best paths through the maze?
 */
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Security.AccessControl;
-using System.Security.Cryptography.X509Certificates;
+using System.ComponentModel;
 
 class Program
 {
@@ -166,7 +213,7 @@ class Program
             {
                 grid[lineIndex, charIndex] = c;
                 // If the character is S, it is the start position.
-                if (c == 'S') 
+                if (c == 'S')
                     (startY, startX) = (lineIndex, charIndex);
                 // If the character is E, it is the end position.
                 else if (c == 'E')
@@ -175,257 +222,223 @@ class Program
             }
             lineIndex++;
         }
-        //Console.WriteLine("Start: " + (startY, startX) + ", End: " + (endY, endX));
-        (int [,] tileNeighbors, int [,] tileDirections) = OptimizeGrid(grid);
-        //PrintGrid(null, tileNeighbors, tileDirections);
-        
-        FindPath((startY, startX), (endY, endX), grid, tileNeighbors, tileDirections);
 
-        //return;
+        // List of positions to visit, with the score, and the direction of the movement.
+        List<(int score, int y, int x, int dy, int dx)> toVisit = new List<(int, int, int, int, int)>();
+        // Dictionary of visited positions, with the score, and the direction of the movement.
+        Dictionary<(int, int), (int score, int dy, int dx)> visited = new Dictionary<(int, int), (int, int, int)>();
+        // The start position is the first position to visit, with a score of 0, and direction to the left.
+        toVisit.Add((0, startY, startX, 0, -1));
+        visited[(startY, startX)] = (0, 0, -1);
+        int score; int y; int x; int dy; int dx;
 
-        // Store the best score of each tile, and the direction where it comes from.
-        Dictionary<(int, int), int> tileScore = new Dictionary<(int, int), int>();
-        Dictionary<(int, int), (int, int)> tileDirection = new Dictionary<(int, int), (int, int)>();
-        // Initialize the end position with a score of 0 and direction of (0, 0).
-        tileScore[(endY, endX)] = 0;
-        tileDirection[(endY, endX)] = (0, 0);
-
-        // Find the lowest score of each tile in the grid, recursively, backtracking from the end to the start.
-        FindLowestScores(grid, tileScore, tileDirection, (endY, endX));
-
-        // The reindeer starts at the start position with direction to the left.
-        (int startDirectionY, int startDirectionX) = (0, -1);
-        // If the direction of the start position is different from left, it is necessary to rotate in the beginning.
-        if (tileDirection[(startY, startX)].Item2 * startDirectionY + tileDirection[(startY, startX)].Item1 * startDirectionX != 0) 
-            // So, add 1000 points to the start position's score, and update the direction to towards left.
-            tileScore[(startY, startX)] = tileScore[(startY, startX)] + 1000;
-        else if (tileDirection[(startY, startX)] == (-startDirectionY, -startDirectionX))
-            // So, add 1000 points to the start position's score, and update the direction to towards left.
-            tileScore[(startY, startX)] = tileScore[(startY, startX)] + 2000;
-
-        tileDirection[(startY, startX)] = (startDirectionY, startDirectionX);
-        // Print the lowest score of the start position.
-        Console.WriteLine("Lowest score: " + tileScore[(startY, startX)]);
-    }
-    
-    static void PrintGrid(char[,] grid, int[,] tileNeighbors, int[,] tileDirections)
-    {
-        (int y, int x) size = grid != null? (grid.GetLength(0), grid.GetLength(1)): 
-                                tileNeighbors != null? (tileNeighbors.GetLength(0), tileNeighbors.GetLength(1)): 
-                                                            (tileDirections.GetLength(0), tileDirections.GetLength(1));
-        for (int y = 0; y < size.y; y++)
+        // Loop while there are positions to visit
+        while (toVisit.Any())
         {
-            for (int x = 0; x < size.x; x++)
+            // sort the scores by the score value
+            toVisit.Sort((a, b) => a.score.CompareTo(b.score));
+            // get the first score
+            (score, y, x, dy, dx) = toVisit[0];
+            //Console.WriteLine("To visit: " + toVisit.Count + ". Next: " + (y, x) + " - score " + score + " - direction " + GetDirectionSymbol(dy, dx));
+            // remove the first score
+            toVisit.RemoveAt(0);
+            // if the current position already has a lower score, nothing to do
+            if (visited[(y, x)].score < score)
+                continue;
+            // if the current position is the end position, print the score and break
+            if (y == endY && x == endX)
             {
-                if (grid != null)
-                    Console.Write(grid[y, x]);
-                else if (tileNeighbors != null)
-                    Console.Write(tileNeighbors[y, x]);
-                else if (tileDirections != null)
-                    if (tileDirections[y, x] > 9) 
-                        Console.Write((char)('A' + tileDirections[y, x] - 10));
-                    else
-                        Console.Write(tileDirections[y, x]);
+                Console.WriteLine("Lowest score: " + score);
+                break;
+            }
+            // find the neighbors of the current position, starting from the same direction
+            EvaluateNeighbor(grid, toVisit, visited, score + 1, dy, dx, y + dy, x + dx, false);
+            // find the neighbor turning clockwise
+            EvaluateNeighbor(grid, toVisit, visited, score + 1001, dx, -dy, y + dx, x - dy, false);
+            // find the neighbor turning counterclockwise
+            EvaluateNeighbor(grid, toVisit, visited, score + 1001, -dx, dy, y - dx, x + dy, false);
+            // find the neighbor turning back, only for the start position
+            if (x == startX && y == startY)
+                EvaluateNeighbor(grid, toVisit, visited, score + 2001, -dy, -dx, y - dy, x - dx, false);
+        }
+
+        int debugLevel = 0;
+
+        if (debugLevel > 0) DisplayVisitedCells(grid, visited);
+
+        // Part two
+        // Create a list of tiles from actual path
+        HashSet<(int, int)> actualPath = new HashSet<(int, int)>();
+        // Create a set of tiles that are part of the best path
+        HashSet<(int, int)> bestPaths = new HashSet<(int, int)>();
+
+        ExploreGridPosition(startY, startX, 0, -1, 0, grid, startY, startX, endY, endX, visited, actualPath, bestPaths, ref debugLevel);
+
+
+        if (debugLevel > 0) 
+        {
+            //sort the best paths
+            bestPaths = new HashSet<(int, int)>(bestPaths.OrderBy(p => p.Item1).ThenBy(p => p.Item2));
+            Console.WriteLine("Best paths: " + string.Join(", ", bestPaths.Select(p => p.ToString())) + "\n");
+        }
+
+        Console.WriteLine("Tiles part of the best path: " + bestPaths.Count);
+
+    }
+
+    private static bool ExploreGridPosition(int y, int x, int dy, int dx, int score, 
+                                            char[,] grid, int startY, int startX, int endY, int endX, 
+                                            Dictionary<(int, int), (int score, int dy, int dx)> visited, 
+                                            HashSet<(int, int)> actualPath, 
+                                            HashSet<(int, int)> bestPaths,
+                                            ref int debugLevel)
+    {
+        // add the current position to the actual path
+        actualPath.Add((y, x));
+        if (debugLevel > 1) 
+        {
+            Console.Write("Explore: " + (y, x) + " - score " + score + " - direction " + GetDirectionSymbol(dy, dx));
+            if (visited.ContainsKey((y, x)))
+                Console.WriteLine(" - best score " + visited[(y, x)].score + " - best direction " + GetDirectionSymbol(visited[(y, x)].dy, visited[(y, x)].dx));
+            else
+                Console.WriteLine(" - not visited before");
+        }
+        // if the current position is the end position, add it to the best path
+        if (y == endY && x == endX)
+        {
+            // for debugging purposes, print the actual path, and exit
+            if (debugLevel > 0) Console.WriteLine("Best path: " + string.Join(" > ", actualPath.Select(p => p.ToString())) + "\n");
+            // add the actual path to the best paths
+            bestPaths.UnionWith(actualPath);
+            return true;
+        }
+        // we need to check if that is a valid position to visit
+        int pathCount = 0;
+        // find the neighbors of the current position, starting from the same direction
+        pathCount += EvaluateNeighborInDepth(grid, visited, score + 1, dy, dx, y + dy, x + dx, 
+                                             startY, startX, endY, endX, actualPath, bestPaths, ref debugLevel) ? 1 : 0;
+        // find the neighbor turning clockwise
+        pathCount += EvaluateNeighborInDepth(grid, visited, score + 1001, dx, -dy, y + dx, x - dy, 
+                                             startY, startX, endY, endX, actualPath, bestPaths, ref debugLevel) ? 1 : 0;
+        // find the neighbor turning counterclockwise
+        pathCount += EvaluateNeighborInDepth(grid, visited, score + 1001, -dx, dy, y - dx, x + dy, 
+                                             startY, startX, endY, endX, actualPath, bestPaths, ref debugLevel) ? 1 : 0;
+        // find the neighbor turning back, only for the start position
+        if (x == startX && y == startY)
+            pathCount += EvaluateNeighborInDepth(grid, visited, score + 2001, -dy, -dx, y - dy, x - dx, 
+                                                 startY, startX, endY, endX, actualPath, bestPaths, ref debugLevel) ? 1 : 0;
+        actualPath.Remove((y, x));
+        return pathCount > 0;
+    }
+
+    private static void DisplayVisitedCells(char[,] grid, Dictionary<(int, int), (int s, int dy, int dx)> visited)
+    {
+        for (int i = 0; i < grid.GetLength(0); i++)
+        {
+            for (int j = 0; j < grid.GetLength(1); j++)
+            {
+                if (visited.ContainsKey((i, j)))
+                    Console.Write(visited[(i, j)].s.ToString().PadLeft(6));
+                else
+                    Console.Write("      ");
             }
             Console.WriteLine();
         }
     }
-    static (int[,], int[,]) OptimizeGrid(char[,] grid)
-    {
-        int[,] tileNeighbors = new int[grid.GetLength(0), grid.GetLength(1)];
-        int[,] tileDirections = new int[grid.GetLength(0), grid.GetLength(1)];
-
-        // Block dead ends and gather neighborwoords information
-        bool found = false;
-        (int y, int x) size = (grid.GetLength(0) - 1, grid.GetLength(1) - 1);
-        do
-        {
-            found = false;
-            for (int y = 1; y < size.y; y++)
-            {
-                for (int x = 1; x < size.x; x++)
-                {
-                    if (grid[y, x] != '#')
-                    {
-                        tileNeighbors[y, x] = (grid[y - 1, x] != '#'? 1: 0) 
-                                            + (grid[y + 1, x] != '#'? 1: 0) 
-                                            + (grid[y, x - 1] != '#'? 1: 0) 
-                                            + (grid[y, x + 1] != '#'? 1: 0);
-                        tileDirections[y, x] = (grid[y - 1, x] != '#'? 2: 0) 
-                                             + (grid[y + 1, x] != '#'? 8: 0) 
-                                             + (grid[y, x - 1] != '#'? 1: 0) 
-                                             + (grid[y, x + 1] != '#'? 4: 0);
-
-                        if (tileNeighbors[y, x] <= 1 && grid[y, x] != 'S' && grid[y, x] != 'E')
-                        {
-                            grid[y, x] = '#';
-                            tileNeighbors[y, x] = 0;
-                            tileDirections[y, x] = 0;
-                            found = true;
-                        }
-                    }
-                }
-            }
-        } while (found);
-        return (tileNeighbors, tileDirections);
-    }
-
+    
     /// <summary>
-    /// Find the score of each tile in the grid, recursively, backtracking from the end to the start.
+    /// Get the symbol of the direction. For debugging purposes.
     /// </summary>
-    /// <param name="grid">Maze grid</param>
-    /// <param name="tileScore">Score of each tile</param>
-    /// <param name="tileDirection">Direction at each tile</param>
-    /// <param name="actual">Actual tile</param>
-    static void FindLowestScores(char[,] grid, Dictionary<(int, int), int> tileScore, Dictionary<(int, int), (int, int)> tileDirection,
-                                 (int y, int x) actual)
+    /// <param name="dy">Movement in the y-axis</param>
+    /// <param name="dx">Movement in the x-axis</param>
+    /// <returns>Symbol of the direction: ^ (up), v (down), > (right), < (left)</returns>
+    private static char GetDirectionSymbol(int dy, int dx)
     {
-        //Console.WriteLine("Actual: " + actual + ", Score: " + tileScore[actual] + ", Direction: " + tileDirection[actual]);
-        // Check the four directions
-        (int dY, int dX)[] directions = new (int, int)[] { (0, 1), (-1, 0), (0, -1), (1, 0) };
-        // Check each direction
-        foreach ((int dY, int dX) direction in directions)
-        {
-            if (direction == (-tileDirection[actual].Item1, -tileDirection[actual].Item2))
-                continue;
-            // Move from the actual tile, towards the direction specified, to get the new tile.
-            (int newY, int newX) = (actual.y + direction.dY, actual.x + direction.dX);
-            // If the new tile is out of the grid or is a wall, ignore it. Go to the next direction.
-            if (newY < 0 || newY >= grid.GetLength(0) || newX < 0 || newX >= grid.GetLength(1) || grid[newY, newX] == '#')
-                continue;
-            // Calculate the new score. It is the score of the actual tile plus 1.
-            int newScore = 1 + tileScore[actual];
-            // If the direction of the new tile is different from the actual direction, add 1000 points.
-            if (tileDirection[actual].Item2 * direction.dY + tileDirection[actual].Item1 * direction.dX != 0)
-                newScore += 1000;
-            // If the new tile has a score and it is less or equal to the new score, ignore it. Go to the next direction.
-            if (tileScore.ContainsKey((newY, newX)) && tileScore[(newY, newX)] <= newScore)
-                continue;
-            // No previous score or the new score is better: update the score and direction of the new tile.
-            tileScore[(newY, newX)] = newScore;
-            tileDirection[(newY, newX)] = direction;
-            // Recursively, find the score of all the tiles around the new tile.
-            FindLowestScores(grid, tileScore,  tileDirection, (newY, newX));
-        }
+        return dy == 0 ? (dx == 1 ? '>' : '<') : (dy == 1 ? 'v' : '^');
     }
-    static void FindPath((int y, int x) start, (int y, int x) end, char[,] grid, int [,] tileNeighbors, int [,] tileDirections)
+    
+    /// <summary>
+    /// Evaluate a neighbor position. 
+    /// If is a valid position to visit or revisit, add it to the list of positions to visit, and update the score and direction.
+    /// </summary>
+    /// <param name="grid">Grid of the maze</param>
+    /// <param name="toVisit">List of positions to visit</param>
+    /// <param name="visited">Dictionary of visited positions</param>
+    /// <param name="score">Current score</param>
+    /// <param name="dy">Current movement in the y-axis</param>
+    /// <param name="dx">Current movement in the x-axis</param>
+    /// <param name="ny">Neighbor position in the y-axis</param>
+    /// <param name="nx">Neighbor position in the x-axis</param>
+    private static void EvaluateNeighbor(char[,] grid, 
+                                         List<(int s, int y, int x, int dy, int dx)> toVisit, 
+                                         Dictionary<(int, int), (int s, int dy, int dx)> visited, 
+                                         int score, int dy, int dx, int ny, int nx, bool debug = false)
     {
-        // Find the path from the start to the end.
-        (int y, int x) direction = (0, -1);
-        (int y, int x) size = (grid.GetLength(0), grid.GetLength(1));
-        List<(int y, int x)> vertices = new List<(int y, int x)>();
-        Dictionary <(int, int), List<(int, int)>> vertexNeighbors = new Dictionary<(int, int), List<(int, int)>>();
-        Dictionary <(int y, int x), (int y, int x)> vertexDirection = new Dictionary<(int, int), (int, int)>();
-        Dictionary <(int, int), int> vertexCost = new Dictionary<(int, int), int>();        
-        Dictionary <(int y, int x), (int y, int x)> vertexPrevious = new Dictionary<(int, int), (int, int)>();
-        vertices.Add(start);
-        vertexCost[start] = 0;
-        vertexDirection[start] = (0, -1);
-        int actualCost;
-        int nextVertex = 0;
-        Dictionary<int, (int, int)> decodeDirection = new Dictionary<int, (int, int)> { { 1, (0, -1) }, { 2, (-1, 0) }, { 4, (0, 1) }, { 8, (1, 0) } };
-        while (nextVertex < vertices.Count)
+        if (debug) Console.Write("\tNeighbor: " + (ny, nx) + " - score " + score + " - direction " + GetDirectionSymbol(dy, dx));
+        //To visit: " + toVisit.Count + ". Next: " + (y, x) + " - score " + score + " - direction " + d);
+        // if the neighbor is a valid position and not a wall
+        if (ny >= 0 && ny < grid.GetLength(0) && nx >= 0 && nx < grid.GetLength(1) && grid[ny, nx] != '#')
         {
-            (int y, int x) actualVertex = vertices[nextVertex];
-            //Console.WriteLine("Exploring vertex: " + actualVertex + ", cost: " + vertexCost[actualVertex] + ", direction: " + vertexDirection[actualVertex]);
-            //Console.WriteLine("       Neighbors: " + tileNeighbors[actualVertex.y, actualVertex.x] + ", Directions: " + tileDirections[actualVertex.y, actualVertex.x] + ", Content: " + grid[actualVertex.y, actualVertex.x]);
-            // Check the four directions
-            for (int directionIndex = 0; directionIndex < 4; directionIndex++)
+            // If the neighbor is already visited and has a lower score, nothing to do
+            if (visited.ContainsKey((ny, nx)) && visited[(ny, nx)].s <= score)
             {
-                actualCost = vertexCost[actualVertex];
-                (int y, int x) actualTile = actualVertex;
-                int directionCode = tileDirections[actualVertex.y, actualVertex.x] & (1 << directionIndex);
-                if (directionCode == 0)
-                    continue;
-                (int y, int x) actualDirection = decodeDirection[directionCode];
-                if (vertexDirection[actualVertex] != actualDirection)
-                    actualCost += 1000;
-                if (vertexDirection[actualVertex] == (-actualDirection.y, -actualDirection.x))
-                    actualCost += 1000;
-                // Move from the actual tile, towards the direction specified, to get the new tile.
-                actualTile = (actualTile.y + actualDirection.y, actualTile.x + actualDirection.x);
-                actualCost++;
-                //Console.WriteLine("Tile: " + actualTile + " Cost: " + actualCost + ", Neighbors: " + tileNeighbors[actualTile.y, actualTile.x] + ", Directions: " + tileDirections[actualTile.y, actualTile.x]);
-                (int y, int x) tileBefore = actualVertex;
-                (int y, int x) directionBefore = actualDirection;
-                while (tileNeighbors[actualTile.y, actualTile.x] == 2 && actualTile != end)
-                {
-                    for (int directionIndex2 = 0; directionIndex2 < 4; directionIndex2++)
-                    {
-                        directionCode = tileDirections[actualTile.y, actualTile.x] & (1 << directionIndex2);
-                        if (directionCode == 0)
-                            continue;
-                        actualDirection = decodeDirection[directionCode];
-                        // Move from the actual tile, towards the direction specified, to get the new tile.
-                        if ((actualTile.y + actualDirection.y, actualTile.x + actualDirection.x) != tileBefore)
-                        {
-                            actualCost++;
-                            if (actualDirection != directionBefore)
-                                actualCost += 1000;
-                            tileBefore = actualTile;
-                            actualTile = (actualTile.y + actualDirection.y, actualTile.x + actualDirection.x);
-                            directionBefore = actualDirection;
-                            break;
-                        }
-                    }
-                    //Console.WriteLine("Tile: " + actualTile + " Cost: " + actualCost + ", Neighbors: " + tileNeighbors[actualTile.y, actualTile.x] + ", Directions: " + tileDirections[actualTile.y, actualTile.x]);
-                }
-                if (vertices.Contains(actualTile))
-                {
-                    if (actualCost < vertexCost[actualTile])
-                    {
-                        vertexCost[actualTile] = actualCost;
-                        vertexDirection[actualTile] = actualDirection;
-                        vertexPrevious[actualTile] = actualVertex;
-                        //Console.WriteLine("      Old vertex: " + actualTile + ", cost: " + vertexCost[actualTile] + ", direction: " + vertexDirection[actualTile]);
-                    }
-                    else {
-                        //Console.WriteLine("     Same vertex: " + actualTile + ", cost: " + vertexCost[actualTile] + ", direction: " + vertexDirection[actualTile]);
-                    }
-                }
-                else
-                {
-                    vertices.Add(actualTile);
-                    vertexCost[actualTile] = actualCost;
-                    vertexDirection[actualTile] = actualDirection;
-                    vertexPrevious[actualTile] = actualVertex;
-                    //Console.WriteLine("      New vertex: " + actualTile + ", cost: " + vertexCost[actualTile] + ", direction: " + vertexDirection[actualTile]);
-                }
-                if (!vertexNeighbors.ContainsKey(actualVertex))
-                    vertexNeighbors[actualVertex] = new List<(int, int)>();
-                if (!vertexNeighbors[actualVertex].Contains(actualTile))
-                    vertexNeighbors[actualVertex].Add(actualTile);
-                if (!vertexNeighbors.ContainsKey(actualTile))
-                    vertexNeighbors[actualTile] = new List<(int, int)>();
-                if (!vertexNeighbors[actualTile].Contains(actualVertex))
-                    vertexNeighbors[actualTile].Add(actualVertex);                    
+                if (debug) Console.WriteLine(" - already visited");
+                return;
             }
-            nextVertex++;
+            // set (update ou include) the score and direction for the neighbor
+            visited[(ny, nx)] = (score, dy, dx);
+            // add the neighbor to the list of positions to visit (first time, or again, with a better score)
+            toVisit.Add((score, ny, nx, dy, dx));
+            if (debug) Console.WriteLine(" - to visit");
         }
-        Console.WriteLine("         The end: " + end + ", cost: " + vertexCost[end] + ", direction: " + vertexDirection[end]);
-        return;
-        Console.WriteLine("Graph:");
-        for (int i = 0; i < vertices.Count; i++)
-            Console.WriteLine("\t" + vertices[i] + ": " + string.Join(", ", vertexNeighbors[vertices[i]]));
+        else
+            if (debug) Console.WriteLine(" - wall");
+    }
 
-        Dictionary <(int y, int x), (int y, int x)> vertexNext = new Dictionary<(int, int), (int, int)>();
-        (int y, int x) vertex = end;
-        Console.Write("Path (E) ");
-        while (vertex != start)
+    private static bool EvaluateNeighborInDepth(char[,] grid, 
+                                                Dictionary<(int, int), (int score, int dy, int dx)> visited, 
+                                                int score, int dy, int dx, int ny, int nx, int startY, int startX, int endY, int endX, 
+                                                HashSet<(int, int)> actualPath, 
+                                                HashSet<(int, int)> bestPaths, 
+                                                ref int debugLevel)
+    {
+        if (debugLevel > 2) Console.Write("\t" + (ny - dy, nx - dx) + " > " + (ny, nx) + " - score " + score + " - direction " + GetDirectionSymbol(dy, dx));
+        //To visit: " + toVisit.Count + ". Next: " + (y, x) + " - score " + score + " - direction " + d);
+        // if the neighbor is a valid position and not a wall
+        if (ny >= 0 && ny < grid.GetLength(0) && nx >= 0 && nx < grid.GetLength(1) && grid[ny, nx] != '#')
         {
-            Console.Write(vertex + " <- ");
-            vertexNext[vertexPrevious[vertex]] = vertex;
-            vertex = vertexPrevious[vertex];
+            // If the neighbor is already visited
+            if (visited.ContainsKey((ny, nx)))
+            {
+                //  and has a lower score at same direction, nothing to do
+                if (visited[(ny, nx)].score < score && visited[(ny, nx)].dy == dy && visited[(ny, nx)].dx == dx)
+                {
+                    if (debugLevel > 2) Console.WriteLine(" - neighbor has a lower score (same direction)");
+                    return false;
+                }
+                //  and has a very lower score regardless of the direction, nothing to do either
+                else if (visited[(ny, nx)].score < score - 1000)
+                {
+                    if (debugLevel > 2) Console.WriteLine(" - neighbor has a much lower score");
+                    return false;
+                }
+                // and has a lower score at end position
+                else if (visited[(ny, nx)].score < score && ny == endY && nx == endX)
+                {
+                    if (debugLevel > 2) Console.WriteLine(" - neighbor has a lower score (end tile)");
+                    return false;
+                }
+            }
+            if (debugLevel > 2) Console.WriteLine(" - to visit");
+            // visit the neighbor
+            //toVisit.Push((score, ny, nx, dy, dx));
+            return ExploreGridPosition(ny, nx, dy, dx, score, grid, startY, startX, endY, endX, visited, actualPath, bestPaths, ref debugLevel);
         }
-        Console.WriteLine(vertex + " (S)");
-        vertex = start;
-        Console.Write("Path (S) ");
-        while (vertex != end)
+        else
         {
-            Console.Write(vertex + " -> ");
-            vertex = vertexNext[vertex];
+            if (debugLevel > 2) Console.WriteLine(" - wall");
+            return false;
         }
-        Console.WriteLine(vertex + " (E)");
     }
 }
 
