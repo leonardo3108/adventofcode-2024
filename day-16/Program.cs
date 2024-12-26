@@ -265,70 +265,65 @@ class Program
         int debugLevel = 0;
 
         if (debugLevel > 0) DisplayVisitedCells(grid, visited);
+        while (RemoveDeadEnds(grid, visited));
+        if (debugLevel > 0) DisplayVisitedCells(grid, visited);
 
         // Part two
-        // Create a list of tiles from actual path
-        HashSet<(int, int)> actualPath = new HashSet<(int, int)>();
         // Create a set of tiles that are part of the best path
         HashSet<(int, int)> bestPaths = new HashSet<(int, int)>();
+    
+        Stack<(int y, int x, int score, int dy, int dx, List<(int y, int x)> path)> toVisitStack = new Stack<(int, int, int, int, int, List<(int, int)>)>();
+        List<(int, int)> actualPath;
 
-        ExploreGridPosition(startY, startX, 0, -1, 0, grid, startY, startX, endY, endX, visited, actualPath, bestPaths, ref debugLevel);
+        // add the current position to the actual path and to the list of positions to visit
+        toVisitStack.Push((startY, startX, 0, 0, -1, new List<(int, int)>()));
 
+        while (toVisitStack.Count > 0)
+        {
+            (y, x, score, dy, dx, actualPath) = toVisitStack.Pop();
+            actualPath.Add((y, x));
 
+            if (debugLevel > 1) 
+            {
+                Console.Write("Explore: " + (y, x) + " - score " + score + " - direction " + GetDirectionSymbol(dy, dx));
+                if (visited.ContainsKey((y, x)))
+                    Console.WriteLine(" - best score " + visited[(y, x)].score + " - best direction " + GetDirectionSymbol(visited[(y, x)].dy, visited[(y, x)].dx));
+                else
+                    Console.WriteLine(" - not visited before");
+            }
+            // if the current position is the end position, add it to the best path
+            if (y == endY && x == endX)
+            {
+                // for debugging purposes, print the actual path, and exit
+                if (debugLevel > 0) Console.WriteLine("Best path: " + string.Join(" > ", actualPath.Select(p => p.ToString())) + "\n");
+                // add the actual path to the best paths
+                bestPaths.UnionWith(actualPath);
+            }
+            else
+            {
+                // find the neighbor turning back, only for the start position
+                if (x == startX && y == startY)
+                    EvaluateNeighborInDepth(grid, visited, score + 2001, -dy, -dx, y - dy, x - dx, 
+                                            endY, endX, toVisitStack, actualPath, ref debugLevel);
+                // find the neighbor turning counterclockwise
+                EvaluateNeighborInDepth(grid, visited, score + 1001, -dx, dy, y - dx, x + dy, 
+                                        endY, endX, toVisitStack, actualPath, ref debugLevel);
+                // find the neighbor turning clockwise
+                EvaluateNeighborInDepth(grid, visited, score + 1001, dx, -dy, y + dx, x - dy, 
+                                        endY, endX, toVisitStack, actualPath, ref debugLevel);
+                // find the neighbors of the current position, starting from the same direction
+                EvaluateNeighborInDepth(grid, visited, score + 1, dy, dx, y + dy, x + dx, 
+                                        endY, endX, toVisitStack, actualPath, ref debugLevel);
+            }
+            if (debugLevel > 1) Console.WriteLine("\tTo visit: " + toVisit.Count);
+        }
         if (debugLevel > 0) 
         {
             //sort the best paths
             bestPaths = new HashSet<(int, int)>(bestPaths.OrderBy(p => p.Item1).ThenBy(p => p.Item2));
             Console.WriteLine("Best paths: " + string.Join(", ", bestPaths.Select(p => p.ToString())) + "\n");
         }
-
         Console.WriteLine("Tiles part of the best path: " + bestPaths.Count);
-
-    }
-
-    private static bool ExploreGridPosition(int y, int x, int dy, int dx, int score, 
-                                            char[,] grid, int startY, int startX, int endY, int endX, 
-                                            Dictionary<(int, int), (int score, int dy, int dx)> visited, 
-                                            HashSet<(int, int)> actualPath, 
-                                            HashSet<(int, int)> bestPaths,
-                                            ref int debugLevel)
-    {
-        // add the current position to the actual path
-        actualPath.Add((y, x));
-        if (debugLevel > 1) 
-        {
-            Console.Write("Explore: " + (y, x) + " - score " + score + " - direction " + GetDirectionSymbol(dy, dx));
-            if (visited.ContainsKey((y, x)))
-                Console.WriteLine(" - best score " + visited[(y, x)].score + " - best direction " + GetDirectionSymbol(visited[(y, x)].dy, visited[(y, x)].dx));
-            else
-                Console.WriteLine(" - not visited before");
-        }
-        // if the current position is the end position, add it to the best path
-        if (y == endY && x == endX)
-        {
-            // for debugging purposes, print the actual path, and exit
-            if (debugLevel > 0) Console.WriteLine("Best path: " + string.Join(" > ", actualPath.Select(p => p.ToString())) + "\n");
-            // add the actual path to the best paths
-            bestPaths.UnionWith(actualPath);
-            return true;
-        }
-        // we need to check if that is a valid position to visit
-        int pathCount = 0;
-        // find the neighbors of the current position, starting from the same direction
-        pathCount += EvaluateNeighborInDepth(grid, visited, score + 1, dy, dx, y + dy, x + dx, 
-                                             startY, startX, endY, endX, actualPath, bestPaths, ref debugLevel) ? 1 : 0;
-        // find the neighbor turning clockwise
-        pathCount += EvaluateNeighborInDepth(grid, visited, score + 1001, dx, -dy, y + dx, x - dy, 
-                                             startY, startX, endY, endX, actualPath, bestPaths, ref debugLevel) ? 1 : 0;
-        // find the neighbor turning counterclockwise
-        pathCount += EvaluateNeighborInDepth(grid, visited, score + 1001, -dx, dy, y - dx, x + dy, 
-                                             startY, startX, endY, endX, actualPath, bestPaths, ref debugLevel) ? 1 : 0;
-        // find the neighbor turning back, only for the start position
-        if (x == startX && y == startY)
-            pathCount += EvaluateNeighborInDepth(grid, visited, score + 2001, -dy, -dx, y - dy, x - dx, 
-                                                 startY, startX, endY, endX, actualPath, bestPaths, ref debugLevel) ? 1 : 0;
-        actualPath.Remove((y, x));
-        return pathCount > 0;
     }
 
     private static void DisplayVisitedCells(char[,] grid, Dictionary<(int, int), (int s, int dy, int dx)> visited)
@@ -344,6 +339,36 @@ class Program
             }
             Console.WriteLine();
         }
+    }
+    private static bool RemoveDeadEnds(char[,] grid, Dictionary<(int, int), (int s, int dy, int dx)> visited)
+    {
+        bool removed = false;
+        for (int i = 1; i < grid.GetLength(0) - 1; i++)
+        {
+            for (int j = 1; j < grid.GetLength(1) - 1; j++)
+            {
+                if (grid[i, j] == '#' || grid[i, j] == 'S' || grid[i, j] == 'E')
+                    continue;
+
+                // count the number of visitable neighbors
+                int count = 0;
+                if (grid[i - 1, j] != '#') count++;
+                if (grid[i + 1, j] != '#') count++;
+                if (grid[i, j - 1] != '#') count++;
+                if (grid[i, j + 1] != '#') count++;
+                // if the current position has only one visitable neighbor, it is a dead end
+                if (count == 1)
+                {
+                    // mark the current position as a wall
+                    grid[i, j] = '#';
+                    removed = true;
+                    // if the current position is visited, remove it from the visited positions
+                    if (visited.ContainsKey((i, j)))
+                        visited.Remove((i, j));
+                }
+            }
+        }
+        return removed;
     }
     
     /// <summary>
@@ -395,11 +420,11 @@ class Program
             if (debug) Console.WriteLine(" - wall");
     }
 
-    private static bool EvaluateNeighborInDepth(char[,] grid, 
+    private static void EvaluateNeighborInDepth(char[,] grid, 
                                                 Dictionary<(int, int), (int score, int dy, int dx)> visited, 
-                                                int score, int dy, int dx, int ny, int nx, int startY, int startX, int endY, int endX, 
-                                                HashSet<(int, int)> actualPath, 
-                                                HashSet<(int, int)> bestPaths, 
+                                                int score, int dy, int dx, int ny, int nx, int endY, int endX, 
+                                                Stack<(int y, int x, int score, int dx, int dy, List<(int y, int x)> path)> toVisit,
+                                                List<(int y, int x)> actualPath,
                                                 ref int debugLevel)
     {
         if (debugLevel > 2) Console.Write("\t" + (ny - dy, nx - dx) + " > " + (ny, nx) + " - score " + score + " - direction " + GetDirectionSymbol(dy, dx));
@@ -414,31 +439,27 @@ class Program
                 if (visited[(ny, nx)].score < score && visited[(ny, nx)].dy == dy && visited[(ny, nx)].dx == dx)
                 {
                     if (debugLevel > 2) Console.WriteLine(" - neighbor has a lower score (same direction)");
-                    return false;
+                    return;
                 }
                 //  and has a very lower score regardless of the direction, nothing to do either
                 else if (visited[(ny, nx)].score < score - 1000)
                 {
                     if (debugLevel > 2) Console.WriteLine(" - neighbor has a much lower score");
-                    return false;
+                    return;
                 }
                 // and has a lower score at end position
                 else if (visited[(ny, nx)].score < score && ny == endY && nx == endX)
                 {
                     if (debugLevel > 2) Console.WriteLine(" - neighbor has a lower score (end tile)");
-                    return false;
+                    return;
                 }
-            }
-            if (debugLevel > 2) Console.WriteLine(" - to visit");
+            }            
+            if (debugLevel > 2) Console.WriteLine(" - not visited before");
             // visit the neighbor
-            //toVisit.Push((score, ny, nx, dy, dx));
-            return ExploreGridPosition(ny, nx, dy, dx, score, grid, startY, startX, endY, endX, visited, actualPath, bestPaths, ref debugLevel);
+            toVisit.Push((ny, nx, score, dy, dx, new List<(int, int)>(actualPath)));
         }
         else
-        {
             if (debugLevel > 2) Console.WriteLine(" - wall");
-            return false;
-        }
     }
 }
 
