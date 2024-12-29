@@ -46,6 +46,7 @@ I'll explore GitHub Copilot for helping me to build, fix and optimize the code.
 * [Day 18](./day-18/Program.cs) ⭐⭐
 * [Day 19](./day-19/Program.cs) ⭐⭐
 * [Day 20](./day-20/Program.cs) ⭐⭐
+* [Day 21](./day-21/Program.cs) ⭐⭐
 
 ## Solutions / Representation:
 * [Day 14](./day-14/Program.cs) - Grid:
