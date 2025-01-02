@@ -164,7 +164,8 @@ y00: 1
 y01: 0
 y02: 1
 y03: 1
-If the system were working correctly, then after all gates are finished processing, you should find 24 (11+13) on the z wires as the five-bit binary number 11000:
+If the system were working correctly, then after all gates are finished processing, 
+you should find 24 (11+13) on the z wires as the five-bit binary number 11000:
 
 z00: 0
 z01: 0
@@ -173,9 +174,12 @@ z03: 1
 z04: 1
 Unfortunately, your actual system needs to add numbers with many more bits and therefore has many more wires.
 
-Based on forensic analysis of scuff marks and scratches on the device, you can tell that there are exactly four pairs of gates whose output wires have been swapped. (A gate can only be in at most one such pair; no gate's output was swapped multiple times.)
+Based on forensic analysis of scuff marks and scratches on the device, 
+you can tell that there are exactly four pairs of gates whose output wires have been swapped. 
+(A gate can only be in at most one such pair; no gate's output was swapped multiple times.)
 
-For example, the system below is supposed to find the bitwise AND of the six-bit number on x00 through x05 and the six-bit number on y00 through y05 and then write the result as a six-bit number on z00 through z05:
+For example, the system below is supposed to find the bitwise AND of the six-bit number on x00 through x05 and the six-bit number on y00 through y05 
+and then write the result as a six-bit number on z00 through z05:
 
 x00: 0
 x01: 1
@@ -196,7 +200,10 @@ x02 AND y02 -> z01
 x03 AND y03 -> z03
 x04 AND y04 -> z04
 x05 AND y05 -> z00
-However, in this example, two pairs of gates have had their output wires swapped, causing the system to produce wrong answers. The first pair of gates with swapped outputs is x00 AND y00 -> z05 and x05 AND y05 -> z00; the second pair of gates is x01 AND y01 -> z02 and x02 AND y02 -> z01. Correcting these two swaps results in this system that works as intended for any set of initial values on wires that start with x or y:
+However, in this example, two pairs of gates have had their output wires swapped, causing the system to produce wrong answers. 
+The first pair of gates with swapped outputs is x00 AND y00 -> z05 and x05 AND y05 -> z00; 
+the second pair of gates is x01 AND y01 -> z02 and x02 AND y02 -> z01. 
+Correcting these two swaps results in this system that works as intended for any set of initial values on wires that start with x or y:
 
 x00 AND y00 -> z00
 x01 AND y01 -> z01
@@ -204,14 +211,27 @@ x02 AND y02 -> z02
 x03 AND y03 -> z03
 x04 AND y04 -> z04
 x05 AND y05 -> z05
-In this example, two pairs of gates have outputs that are involved in a swap. By sorting their output wires' names and joining them with commas, the list of wires involved in swaps is z00,z01,z02,z05.
+In this example, two pairs of gates have outputs that are involved in a swap. 
+By sorting their output wires' names and joining them with commas, the list of wires involved in swaps is z00,z01,z02,z05.
 
-Of course, your actual system is much more complex than this, and the gates that need their outputs swapped could be anywhere, not just attached to a wire starting with z. If you were to determine that you need to swap output wires aaa with eee, ooo with z99, bbb with ccc, and aoc with z24, your answer would be aaa,aoc,bbb,ccc,eee,ooo,z24,z99.
+Of course, your actual system is much more complex than this, and the gates that need their outputs swapped could be anywhere, 
+not just attached to a wire starting with z. 
+If you were to determine that you need to swap output wires aaa with eee, ooo with z99, bbb with ccc, and aoc with z24, 
+your answer would be aaa,aoc,bbb,ccc,eee,ooo,z24,z99.
 
-Your system of gates and wires has four pairs of gates which need their output wires swapped - eight wires in total. Determine which four pairs of gates need their outputs swapped so that your system correctly performs addition; what do you get if you sort the names of the eight wires involved in a swap and then join those names with commas?
+Your system of gates and wires has four pairs of gates which need their output wires swapped - eight wires in total. 
+Determine which four pairs of gates need their outputs swapped so that your system correctly performs addition; what do you get if you sort the names of the eight wires involved in a swap and then join those names with commas?
+
+Resume:
+The problem is to find the four pairs of gates that need their outputs swapped, to fix the errors in the system.
+
+Resolution steps:
+1. Hack the gates in each adder to find errors.
+2. Swap the outputs of two gates, trying to fix the errors.
+3. Evaluate the gates and compute the decimal number, to check if the errors were fixed.
+4. Print the names of the eight wires involved in a swap.
 */
 
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Text;
 
@@ -289,10 +309,11 @@ class Program
         // Read the input file
         lines = File.ReadAllLines("input.txt");
 
+        // String to store the wire values (a bit from each gate) and the gates (triad of operation, gate1, gate2 for each gate)
         Dictionary<string, int> wireValues = new Dictionary<string, int>();
         Dictionary<string, (string op, string g1, string g2)> gates = new Dictionary<string, (string, string, string)>();
 
-        // Parse the input and store the wire values and gates
+        // Parse the input and fill the wire values and gates
         foreach (string line in lines)
         {
             if (line.Contains(":"))
@@ -311,65 +332,144 @@ class Program
             }
         }
 
+        //copy the original wire values, to be used in part 2
         var originalWireValues = new Dictionary<string, int>(wireValues);
 
+        // Part 1 - Evaluate the gates and compute the decimal number
         (ulong z, var sum, var errors) = EvaluateGatesAndCompute(wireValues, gates);
-        Console.WriteLine($"The decimal number output on the wires starting with z is {z}.");
+        Console.WriteLine($"The decimal number output on the wires starting with z is {z}. (PART ONE ANSWER)");
         Console.WriteLine($"{errors.Count} errors at z-gates: {string.Join(", ", errors)}.\n");
 
-        // Part 2
-        /*
-        (z28,rwv) = (khf XOR ngm) vs (khf AND ngm) = 0 vs 1
-        //(z29,jtw) = (ctt XOR nqr) vs (ctt AND nqr) = 0 vs 1
-        (z30,ppm) = (dtf XOR pgr) vs (dtf AND pgr) = 1 vs 0
-        (qjc,qfs) = (x05 AND y05) vs (x05 XOR y05) = 0 vs 1
-        (skn,hcc) = (cgn AND cjh) vs (cgn XOR cjh) = 0 vs 1
-        (qcw,hqc) = (x24 XOR y24) vs (x24 AND y24) = 1 vs 0
+        // Part 2 - Find the gates that need their outputs swapped
+        // hack the gates in each adder to find errors
+        //DiscoverAddersGates(gates, sum.Length);
+        //Console.WriteLine();
 
-        */
+        // Swap the outputs of two gates, trying to fix the errors.
+        // Coded manually, based on the errors found and the hack of the gates in each adder
         List<string> swapList = new List<string>();
-        SwapGates("qjc", "qfs", gates, swapList);
-        SwapGates("skn", "hcc", gates, swapList);
-        SwapGates("qcw", "hqc", gates, swapList);
-        SwapGates("z30", "ppm", gates, swapList);
-        Console.WriteLine();
+        SwapGates("z05", "bpf", gates, swapList);
+        SwapGates("z11", "hcc", gates, swapList);
+        SwapGates("hqc", "qcw", gates, swapList);  // from Adder 24
+        SwapGates("z35", "fdw", gates, swapList);  // the only swap that did not cause an error (a change in the value of z gate)
+        swapList.Sort();
+        Console.WriteLine($"The names of the eight wires involved in a swap are: {string.Join(",", swapList)}. (PART TWO ANSWER)\n");
 
+        // Evaluate the gates and compute the decimal number, to check if the errors were fixed
         wireValues = new Dictionary<string, int>(originalWireValues);
         (z, sum, errors) = EvaluateGatesAndCompute(wireValues, gates);
         if (errors.Count == 0)
-            Console.WriteLine("Zero erros at z-gates.");
+            Console.WriteLine("Zero errors at z-gates.");
         else
             Console.WriteLine($"{errors.Count} errors at z-gates: {string.Join(", ", errors)}.\n");
-        //hcc,hqc,ppm,qcw,qfs,qjc,skn,z30
-
-        swapList.Sort();
-        Console.WriteLine($"The names of the eight wires involved in a swap are: {string.Join(",", swapList)}.");
+        
+        // hack the gates in each adder to check if the errors were fixed
+        //Console.WriteLine();
+        //DiscoverAddersGates(gates, sum.Length);
     }
 
-    private static void SwapGates(string gate1, string gate2, Dictionary<string, (string op, string g1, string g2)> gates, List<string> swapList)
+    /// <summary>
+    ///     Discover the gates in each adder, print them and, if there is error, show what are the gates possibly involved
+    /// </summary>
+    /// <param name="gates">The dictionary of all gates</param>
+    /// <param name="bits">The number of bits in the sum</param>
+    private static void DiscoverAddersGates(Dictionary<string, (string op, string g1, string g2)> gates, int bits)
+    {
+        string carry = null;
+        for (int index = 0; index < bits - 1; index++)
+            carry = DiscoverAdderGates(gates, index, carry);
+    }
+
+    /// <summary>
+    ///     Discover the gates in one adder, print them and, if there is error, show what are the gates possibly involved
+    /// </summary>
+    /// <param name="gates">The dictionary of all gates</param>
+    /// <param name="index">The index of the adder</param>
+    /// <param name="carryIn">The carry in wire for the adder</param>
+    /// <returns></returns>
+    private static string DiscoverAdderGates(Dictionary<string, (string op, string g1, string g2)> gates, int index, string carryIn = null)
+    {
+        Console.WriteLine($"Adder {index}:");
+        // The first adder is a half adder, just one XOR and one AND. Two inputs: x and y. Two outputs: z and the carry out.
+        if (index == 0)
+        {
+            string gateOr = gates.Where(x => x.Value.g1.EndsWith("00") && x.Value.g2.EndsWith("00") && x.Value.op.Equals("XOR")).First().Key;
+            Console.WriteLine($"\tXOR: {gateOr} = {gates[gateOr].g1} {gates[gateOr].op} {gates[gateOr].g2}.");
+            string gateAnd = gates.Where(x => x.Value.g1.EndsWith("00") && x.Value.g2.EndsWith("00") && x.Value.op.Equals("AND")).First().Key;
+            Console.WriteLine($"\tAND: {gateAnd} = {gates[gateAnd].g1} {gates[gateAnd].op} {gates[gateAnd].g2}.");
+            return gateAnd;
+        }
+        // The other adders are full adders, with two XOR, two AND and one OR. Three inputs: x, y and the carry in. Two outputs: z and the carry out.
+        else
+        {
+            // The first XOR is the sum of the input bits of the adder (x and y)
+            string gateXorA = gates.Where(x => x.Value.g1.EndsWith(index.ToString().PadLeft(2, '0')) && x.Value.g2.EndsWith(index.ToString().PadLeft(2, '0')) && x.Value.op.Equals("XOR")).First().Key;
+            Console.WriteLine($"\tXORA: {gateXorA} = {gates[gateXorA].g1} {gates[gateXorA].op} {gates[gateXorA].g2}.");
+            // The second XOR is the sum of the first XOR and the carry in, and the adder result (z)
+            string gateXorB = carryIn == null || carryIn[0] == 'z'?
+                        gates.Where(x => (x.Value.g1.Equals(gateXorA) || x.Value.g2.Equals(gateXorA)) && x.Value.op.Equals("XOR")).First().Key:
+                        gates.Where(x => (x.Value.g1.Equals(carryIn) || x.Value.g2.Equals(carryIn)) && x.Value.op.Equals("XOR")).First().Key;
+            if (gateXorB[0] == 'z')
+                Console.WriteLine($"\tXORB: {gateXorB} = {gates[gateXorB].g1} {gates[gateXorB].op} {gates[gateXorB].g2}.");
+            else
+                // One possible error: the second XOR exit should be the z gate
+                Console.WriteLine($"\tXORB: {gateXorB} = {gates[gateXorB].g1} {gates[gateXorB].op} {gates[gateXorB].g2}. <<<< ERROR");
+            // The first AND is the first possible carry out, from the two input bits (x and y)
+            string gateAndA = gates.Where(x => x.Value.g1.EndsWith(index.ToString().PadLeft(2, '0')) && x.Value.g2.EndsWith(index.ToString().PadLeft(2, '0')) && x.Value.op.Equals("AND")).First().Key;
+            Console.WriteLine($"\tANDA: {gateAndA} = {gates[gateAndA].g1} {gates[gateAndA].op} {gates[gateAndA].g2}.");
+            // The second AND is the second possible carry out, from the sum of the input bits and the carry in
+            string gateAndB = carryIn == null || carryIn[0] == 'z'?
+                              gates.Where(x => (x.Value.g1.Equals(gateXorA) || x.Value.g2.Equals(gateXorA)) && x.Value.op.Equals("AND")).First().Key:
+                              gates.Where(x => (x.Value.g1.Equals(carryIn) || x.Value.g2.Equals(carryIn)) && x.Value.op.Equals("AND")).First().Key;
+            Console.WriteLine($"\tANDB: {gateAndB} = {gates[gateAndB].g1} {gates[gateAndB].op} {gates[gateAndB].g2}.");
+            // The OR is the carry out, from the two AND gates (the possible carry outs)
+            String gateOr = gates.Where(x => (x.Value.g1.Equals(gateAndA) || x.Value.g2.Equals(gateAndA)) && x.Value.op.Equals("OR") ||
+                                             (x.Value.g1.Equals(gateAndB) || x.Value.g2.Equals(gateAndB)) && x.Value.op.Equals("OR")).First().Key;
+            if ((gates[gateOr].g1 == gateAndA || gates[gateOr].g2 == gateAndA) && (gates[gateOr].g1 == gateAndB || gates[gateOr].g2 == gateAndB))
+                Console.WriteLine($"\t OR : {gateOr} = {gates[gateOr].g1} {gates[gateOr].op} {gates[gateOr].g2}.");
+            else
+                // Another possible error: the OR inputs should be the two AND gates
+                Console.WriteLine($"\t OR : {gateOr} = {gates[gateOr].g1} {gates[gateOr].op} {gates[gateOr].g2}.  <<<< ERROR");
+            // Return the carry out for the next adder
+            return gateOr;
+        }
+    }
+
+    /// <summary>
+    ///    Swap the outputs of two gates, trying to fix the errors.
+    /// </summary>
+    /// <param name="gate1">The first gate to swap</param>
+    /// <param name="gate2">The second gate to swap</param>
+    /// <param name="gates">The dictionary of gates, wich will be modified</param>
+    /// <param name="swapList">The list of gates swapped. The complete list will be used in the final answer</param>
+    private static void SwapGates(string gate1, string gate2, Dictionary<string, (string op, string g1, string g2)> gates, List<string> swapList = null)
     {
         Console.WriteLine($"Swapping gates {gate1} and {gate2}.");
-        var tempGate = gates[gate1];
-        gates[gate1] = gates[gate2];
-        gates[gate2] = tempGate;
-        swapList.Add(gate1);
-        swapList.Add(gate2);
+        (gates[gate1], gates[gate2]) = (gates[gate2], gates[gate1]);
+        // Add the swapped gates to the list, if it was provided
+        if (swapList != null)
+        {
+            swapList.Add(gate1);
+            swapList.Add(gate2);
+        }
     }
 
-    private static string SortGateInputs(Dictionary<string, (string op, string g1, string g2)> gates, string targetGate)
-    {
-        (string g1, string g2) = (gates[targetGate].g1, gates[targetGate].g2);
-        if (g1.CompareTo(g2) > 0)
-            (g1, g2) = (gates[targetGate].g2, gates[targetGate].g1);
-        return $"{g1} {gates[targetGate].op} {g2}";
-    }
-
+    /// <summary>
+    ///    Evaluate the gates and compute the decimal number.
+    /// </summary>
+    /// <param name="wireValues">The dictionary of wire values</param>
+    /// <param name="gates">The dictionary of gates</param>
+    /// <param name="debug">True to show the debug information</param>
+    /// <returns>The decimal number, the binary number, and the list of errors</returns>
+    /// <remarks>
+    ///   This function is used to evaluate the gates and compute the decimal number (part 1).
+    ///   It is used, in part 2, to check if the errors were fixed after swapping the gates.
+    /// </remarks>
     private static (ulong, string, List<string>) EvaluateGatesAndCompute(Dictionary<string, int> wireValues, 
                                                                          Dictionary<string, (string op, string g1, string g2)> gates,
-                                                                         string originalSum = "",
                                                                          bool debug = false)
     {
-        // Evaluate all the wire values
+        // Evaluate all the wire values. If there is a wire value, it is used, otherwise, the gate is evaluated.
         foreach (string wire in gates.Keys)
             EvaluateWire(wire, gates, wireValues);
 
@@ -380,6 +480,7 @@ class Program
             Console.WriteLine("Binary values from gates " + gateNames + ": " + zb);
             Console.WriteLine($"Decimal number: {z}");
         }
+        // Each gate value is broken into two parts, to fit in the int32 type and then enable bitwise operations
 
         // X Gates: compute and print the gate names, the binary number and the decimal number
         (ulong x, string xb, gateNames, int x1, int x2) = Decode('x', wireValues);
@@ -397,23 +498,28 @@ class Program
             Console.WriteLine($"Decimal number: {y}");
         }
 
-        ulong s = originalSum == ""? x + y : Convert.ToUInt64(originalSum, 2);
-        int s1 = originalSum == ""? x1 + y1: Convert.ToInt32(originalSum.Substring(0, originalSum.Length - 30), 2);
-        int s2 = originalSum == ""? x2 + y2: Convert.ToInt32(originalSum.Substring(originalSum.Length - 30, 30), 2);
+        // Compute the sum of the x and y values
+        ulong s = x + y;
+        int s1 = x1 + y1;
+        int s2 = x2 + y2;
         string sb = Convert2binary(s1, s2);
         if (debug) Console.WriteLine($"\nx + y: {s} ({sb})");
+        
+        // Compute the XOR of the z and the sum of x and y. Each set bit is an error corresponding to a z gate
         int d1 = s1 ^ z1, d2 = s2 ^ z2;
         ulong d = (ulong)Math.Pow(2, 30) * (ulong)d1 + (ulong)d2;
         string db = Convert2binary(d1, d2);
         int errorCount = db.Count(x => x == '1');
         if (debug) Console.WriteLine($"z XOR (x + y) = {d} ({db}) - {errorCount} errors.");
 
+        // Print the results
         Console.WriteLine("X-gates: 0" + xb);
         Console.WriteLine("Y-gates: 0" + yb);
         Console.WriteLine("Z-gates: " + zb);
         Console.WriteLine("x + y:   " + sb);
         Console.WriteLine("z^(x+y): " + Convert2binary(d1, d2));
 
+        // Find the errors in the z gates
         List<string> errors = new List<string>();
         for (int i = 0; i < db.Length; i++)
             if (db[db.Length - i - 1] == '1')
@@ -421,6 +527,12 @@ class Program
         return (z, sb, errors);
     }
 
+    /// <summary>
+    ///   Convert the two parts of the binary number to a single binary number
+    /// </summary>
+    /// <param name="part1">The most significant 16 bits</param>
+    /// <param name="part2">The least significant 30 bits</param>
+    /// <returns>The binary number, as a string of 46 bits</returns>
     private static string Convert2binary(int part1, int part2)
     {
         // Pad the 30 bits binary number with zeros
@@ -433,7 +545,7 @@ class Program
     /// </summary>
     /// <param name="prefix">The prefix of the gate names</param>
     /// <param name="wireValues">The dictionary of wire values</param>
-    /// <returns>The decimal number, the binary number, and the list of gate names</returns>
+    /// <returns>The decimal number, the binary number, the string formed by the z-gate names (for debug), and the two parts of the binary number</returns>
     private static (ulong, string, string, int, int) Decode(char prefix, Dictionary<string, int> wireValues)
     {
         // Select the z gates

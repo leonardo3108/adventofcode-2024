@@ -49,7 +49,7 @@ I'll explore GitHub Copilot for helping me to build, fix and optimize the code.
 * [Day 21](./day-21/Program.cs) ⭐⭐
 * [Day 22](./day-22/Program.cs) ⭐⭐
 * [Day 23](./day-23/Program.cs) ⭐⭐
-* [Day 24](./day-24/Program.cs) ⭐
+* [Day 24](./day-24/Program.cs) ⭐⭐
 
 ## Solutions / Representation:
 * [Day 14](./day-14/Program.cs) - Grid:
