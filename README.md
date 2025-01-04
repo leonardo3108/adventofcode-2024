@@ -57,4 +57,5 @@ I'll explore GitHub Copilot for helping me to build, fix and optimize the code.
   * [Textual](./day-14/07093.txt).
   * <p>Image: <img align="center" src="./day-14/07093.jpg" /></p>
 * Calendar: <img align="center" src="./calendar.png" />
+* [Answer](./answer.txt)
 
